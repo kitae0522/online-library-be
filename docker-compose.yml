@@ -13,13 +13,11 @@ services:
       - online-library-be-network
 
   fiber-app:
+    container_name: fiber-app
     build:
       dockerfile: Dockerfile
     depends_on:
       - mysql-container
-    volumes:
-      - .:/app
-      - ./.air:/app/.air
     ports:
       - 8080:8080
     networks:
