@@ -5,7 +5,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 
-	"github.com/kitae0522/online-library-be/pkg/utils"
+	"github.com/kitae0522/online-library-be/pkg/domain"
 )
 
 const JWTExpirationInSec = 60 * 60 * 24 * 7
@@ -23,7 +23,7 @@ func NewToken(userRole, userUUID string, secretKey []byte) (string, error) {
 func ParseJWT(jwtToken string) (string, error) {
 	token, err := jwt.Parse(jwtToken, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, utils.ErrUnexpectedSigningMethod
+			return nil, domain.ErrUnexpectedSigningMethod
 		}
 		return []byte("tempSecret"), nil
 	})
@@ -37,5 +37,5 @@ func ParseJWT(jwtToken string) (string, error) {
 			return uuid, nil
 		}
 	}
-	return "", utils.ErrInvalidTokenClaims
+	return "", domain.ErrInvalidTokenClaims
 }
