@@ -95,6 +95,8 @@ func (c *AuthController) Login(ctx *fiber.Ctx) error {
 
 func (c *AuthController) PasswordReset(ctx *fiber.Ctx) error {
 	resetPayload := new(domain.AuthPasswordResetReq)
+	resetPayload.UserUUID = middleware.GetUUIDFromMiddleware(ctx)
+
 	if err := utils.Bind(ctx, resetPayload); err != nil {
 		return utils.CreateErrorRes(ctx, fiber.StatusBadRequest, "❌ 비밀번호 초기화 실패. Body Binding 과정에서 문제 발생", err)
 	}
@@ -120,6 +122,8 @@ func (c *AuthController) PasswordReset(ctx *fiber.Ctx) error {
 
 func (c *AuthController) Withdraw(ctx *fiber.Ctx) error {
 	withdrawPayload := new(domain.AuthWithdrawReq)
+	withdrawPayload.UserUUID = middleware.GetUUIDFromMiddleware(ctx)
+
 	if err := utils.Bind(ctx, withdrawPayload); err != nil {
 		return utils.CreateErrorRes(ctx, fiber.StatusBadRequest, "❌ 유저 탈퇴 실패. Body Binding 과정에서 문제 발생", err)
 	}
