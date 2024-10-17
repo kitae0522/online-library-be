@@ -3,9 +3,9 @@ package repository
 import (
 	"context"
 
-	"github.com/kitae0522/online-library-be/internal/dto"
 	"github.com/kitae0522/online-library-be/internal/model"
 	"github.com/kitae0522/online-library-be/pkg/crypt"
+	"github.com/kitae0522/online-library-be/pkg/domain"
 )
 
 type AuthRepository struct {
@@ -16,7 +16,7 @@ func NewAuthRepository(prismaClient *model.PrismaClient) *AuthRepository {
 	return &AuthRepository{client: prismaClient}
 }
 
-func (r *AuthRepository) CreateUser(req *dto.AuthRegisterReq) (*model.UsersModel, error) {
+func (r *AuthRepository) CreateUser(req *domain.AuthRegisterReq) (*model.UsersModel, error) {
 	user, err := r.client.Users.CreateOne(
 		model.Users.UserTag.Set(req.UserTag),
 		model.Users.Email.Set(req.Email),
@@ -26,9 +26,9 @@ func (r *AuthRepository) CreateUser(req *dto.AuthRegisterReq) (*model.UsersModel
 	return user, err
 }
 
-func (r *AuthRepository) CreateUserPassword(user *model.UsersModel, password string) error {
+func (r *AuthRepository) CreateUserPassword(user *model.UsersModel, plainedPassword string) error {
 	salt := crypt.EncodeBase64(user.UserUUID)
-	hashedPassword := crypt.NewSHA256(password, salt)
+	hashedPassword := crypt.NewSHA256(plainedPassword, salt)
 
 	_, err := r.client.UserPassword.CreateOne(
 		model.UserPassword.Password.Set(hashedPassword),
@@ -37,6 +37,7 @@ func (r *AuthRepository) CreateUserPassword(user *model.UsersModel, password str
 			model.Users.UserUUID.Equals(user.UserUUID),
 		),
 	).Exec(context.Background())
+
 	return err
 }
 
@@ -59,4 +60,28 @@ func (r *AuthRepository) GetUserPassword(user *model.UsersModel) (*model.UserPas
 		model.UserPassword.UserUUID.Equals(user.UserUUID),
 	).Exec(context.Background())
 	return passwordInfo, err
+}
+
+func (r *AuthRepository) UpdateUserPassword(user *model.UsersModel, plainedPassword string) error {
+	salt := crypt.EncodeBase64(user.UserUUID)
+	hashedPassword := crypt.NewSHA256(plainedPassword, salt)
+
+	_, err := r.client.UserPassword.FindUnique(
+		model.UserPassword.UserUUID.Equals(user.UserUUID),
+	).Update(
+		model.UserPassword.Password.Set(hashedPassword),
+	).Exec(context.Background())
+
+	return err
+}
+
+func (r *AuthRepository) DeleteUser(user *model.UsersModel) (bool, error) {
+	_, err := r.client.Users.FindUnique(
+		model.Users.UserUUID.Equals(user.UserUUID),
+	).Delete().Exec(context.Background())
+
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }
