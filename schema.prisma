@@ -1,0 +1,99 @@
+generator db {
+  provider = "go run github.com/steebchen/prisma-client-go"
+  output   = "./internal/model"
+  package  = "model"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRoles {
+  USER
+  ADMIN
+}
+
+enum BookStatus {
+  AVAILABLE
+  LOANED
+  RESERVED
+}
+
+model Users {
+  userUUID        String            @id @default(uuid())
+  userTag         String            @unique
+  email           String            @unique
+  role            UserRoles
+  name            String
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  UserPassword    UserPassword[]
+  UserProfile     UserProfile[]
+  BookHistory     BookHistory[]
+  BookReservation BookReservation[]
+  BookLoans       BookLoans[]
+
+  @@index([email])
+}
+
+model UserPassword {
+  userUUID String @id
+  password String
+  salt     String
+  user     Users  @relation(fields: [userUUID], references: [userUUID])
+}
+
+model UserProfile {
+  userUUID   String  @id
+  profilePic String?
+  bio        String?
+  user       Users   @relation(fields: [userUUID], references: [userUUID])
+}
+
+model Books {
+  bookUUID        String            @id @default(uuid())
+  title           String
+  author          String
+  company         String
+  status          BookStatus
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  BookHistory     BookHistory[]
+  BookReservation BookReservation[]
+  BookLoans       BookLoans[]
+
+  @@index([title])
+}
+
+model BookHistory {
+  historyUUID String     @id @default(uuid())
+  userUUID    String
+  bookUUID    String
+  loanedAt    DateTime
+  expDate     DateTime
+  status      BookStatus
+  user        Users      @relation(fields: [userUUID], references: [userUUID])
+  book        Books      @relation(fields: [bookUUID], references: [bookUUID])
+}
+
+model BookReservation {
+  reservationUUID String   @id @default(uuid())
+  bookUUID        String
+  userUUID        String
+  reservedAt      DateTime @default(now())
+  status          Boolean
+  user            Users    @relation(fields: [userUUID], references: [userUUID])
+  book            Books    @relation(fields: [bookUUID], references: [bookUUID])
+}
+
+model BookLoans {
+  loanUUID   String    @id @default(uuid())
+  bookUUID   String
+  userUUID   String
+  loanedAt   DateTime  @default(now())
+  expDate    DateTime
+  returnedAt DateTime?
+  user       Users     @relation(fields: [userUUID], references: [userUUID])
+  book       Books     @relation(fields: [bookUUID], references: [bookUUID])
+}

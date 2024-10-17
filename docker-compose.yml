@@ -1,0 +1,33 @@
+services:
+  mysql-container:
+    container_name: mysql-container
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    volumes:
+      - mysql-data:/var/lib/mysql
+    ports:
+      - 3306:3306
+    networks:
+      - online-library-be-network
+
+  fiber-app:
+    build:
+      dockerfile: Dockerfile
+    depends_on:
+      - mysql-container
+    volumes:
+      - .:/app
+      - ./.air:/app/.air
+    ports:
+      - 8080:8080
+    networks:
+      - online-library-be-network
+
+networks:
+  online-library-be-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
