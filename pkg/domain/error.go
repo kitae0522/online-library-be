@@ -8,4 +8,5 @@ var (
 	ErrUnableToDeleteUser       = errors.New("unable to delete user")
 	ErrUnexpectedSigningMethod  = errors.New("unexpected signing method")
 	ErrInvalidTokenClaims       = errors.New("invalid token claims")
+	ErrMissingParams            = errors.New("missing params")
 )

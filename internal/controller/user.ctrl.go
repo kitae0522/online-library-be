@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"log"
+
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/kitae0522/online-library-be/internal/middleware"
@@ -8,6 +10,7 @@ import (
 	"github.com/kitae0522/online-library-be/internal/repository"
 	"github.com/kitae0522/online-library-be/internal/service"
 	"github.com/kitae0522/online-library-be/pkg/domain"
+	"github.com/kitae0522/online-library-be/pkg/utils"
 )
 
 type UserController struct {
@@ -41,19 +44,49 @@ func (c *UserController) Restricted(router fiber.Router) {
 	router.Patch("/:userTag", c.UpdateUserProfile)
 }
 
-func (c *UserController) GetUserProfile(ctx *fiber.Ctx) error {
-	return ctx.Status(fiber.StatusOK).JSON(domain.DefaultRes{
-		IsError:    false,
-		StatusCode: fiber.StatusOK,
-		Message:    "✅ 유저 프로필 조회 완료",
-	})
-}
-
 func (c *UserController) CreateUserProfile(ctx *fiber.Ctx) error {
+	createUserProfilePayload := new(domain.UserCreateUserProfileReq)
+	createUserProfilePayload.UserUUID = middleware.GetUUIDFromMiddleware(ctx)
+
+	if err := c.userService.CreateUserProfile(createUserProfilePayload); err != nil {
+		log.Printf("%v", err)
+		switch err {
+		case model.ErrNotFound:
+			return utils.CreateErrorRes(ctx, fiber.StatusInternalServerError, "❌ 유저 프로필 생성 실패. 존재하지 않는 사용자 프로필을 생성 시도 중입니다.", err)
+		default:
+			return utils.CreateErrorRes(ctx, fiber.StatusInternalServerError, "❌ 유저 프로필 생성 실패. Repository에서 문제 발생", err)
+		}
+	}
+
 	return ctx.Status(fiber.StatusOK).JSON(domain.DefaultRes{
 		IsError:    false,
 		StatusCode: fiber.StatusOK,
 		Message:    "✅ 유저 프로필 생성 완료",
+	})
+}
+
+func (c *UserController) GetUserProfile(ctx *fiber.Ctx) error {
+	profileTag := ctx.Params("userTag")
+	if len(profileTag) <= 0 {
+		return utils.CreateErrorRes(ctx, fiber.StatusBadRequest, "❌ 유저 조회 실패. Binding 과정에서 문제 발생", domain.ErrMissingParams)
+	}
+
+	userProfile, err := c.userService.GetUserUUIDByTag(profileTag)
+	if err != nil {
+		log.Printf("%v", err)
+		switch err {
+		case model.ErrNotFound:
+			return utils.CreateErrorRes(ctx, fiber.StatusInternalServerError, "❌ 유저 조회 실패. 존재하지 않는 사용자입니다.", err)
+		default:
+			return utils.CreateErrorRes(ctx, fiber.StatusInternalServerError, "❌ 유저 조회 실패. Repository에서 문제 발생", err)
+		}
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(domain.UserGetUserProfileRes{
+		IsError:    false,
+		StatusCode: fiber.StatusOK,
+		Message:    "✅ 유저 프로필 조회 완료",
+		Profile:    userProfile,
 	})
 }
 
