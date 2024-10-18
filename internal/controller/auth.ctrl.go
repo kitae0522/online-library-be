@@ -56,6 +56,9 @@ func (c *AuthController) Register(ctx *fiber.Ctx) error {
 		if _, uniqueErr := model.IsErrUniqueConstraint(err); uniqueErr {
 			return utils.CreateErrorRes(ctx, fiber.StatusInternalServerError, "❌ 회원가입 실패. 중복된 유저가 존재합니다.", err)
 		}
+		if err == domain.ErrIncorrectConfirmPassword {
+			return utils.CreateErrorRes(ctx, fiber.StatusInternalServerError, "❌ 회원가입 실패. 패스워드가 일치하지 않습니다.", err)
+		}
 		return utils.CreateErrorRes(ctx, fiber.StatusInternalServerError, "❌ 회원가입 실패. Repository에서 문제 발생", err)
 	}
 
